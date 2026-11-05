@@ -273,7 +273,8 @@
 <input type="file" class="file-input" id="iso-upload" accept=".iso,.img,.bin" onchange="bootCustom(event)">
 
 <!-- v86 engine (hosted locally, no CORS) -->
-<script src="libv86.js"></script>
+<script src="libv86.js?v=7" onload="onV86Loaded()" onerror="onV86Error(event)"></script>
+<script src="long-mode.js"></script>
 <script>
 let emulator = null;
 let deviceMode = 'tablet';
