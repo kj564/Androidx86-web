@@ -431,6 +431,7 @@ function bootOS(icon, name, config) {
   try {
     config.screen_container = document.getElementById('screen');
     emulator = new V86(config);
+      if(typeof V86LongMode !== "undefined") V86LongMode.patch(emulator);
 
     emulator.add_listener('emulator-ready', () => {
       hideBootOverlay();
