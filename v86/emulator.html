@@ -468,7 +468,7 @@ function bootOS(icon, name, config) {
       document.getElementById('emulator-wrap').classList.add('active');
       applyDeviceFrame();
       
-      config.screen = document.getElementById('screen');
+      config.screen_container = document.getElementById('screen');
       var V86Class = window.V86;
       emulator = new V86Class(config);
 
