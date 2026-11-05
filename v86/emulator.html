@@ -274,26 +274,59 @@
 
 <!-- v86 engine (hosted locally, no CORS) -->
 <script>
-// Explicitly set module to undefined to force libv86.js to use window.V86
-var module = undefined;
-</script>
-<script src="v86/libv86.js?v=2" onerror="document.getElementById('error-message').textContent='Failed to load v86/libv86.js. Check network tab.';document.getElementById('error-overlay').classList.add('active');"></script>
-<script>
-// Debug: check if V86 loaded
-console.log('V86 type:', typeof V86);
-console.log('window.V86 type:', typeof window.V86);
+// Load v86 via XHR then eval — more reliable than script tag for large files
+(function() {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', 'v86/libv86.js?v=4', true);
+  xhr.onload = function() {
+    if (xhr.status === 200) {
+      try {
+        // Execute in global scope
+        (0, eval)(xhr.responseText);
+        // V86 should now be on window
+        if (typeof window.V86 !== 'undefined') {
+          console.log('V86 loaded via XHR+eval, type:', typeof window.V86);
+        } else {
+          console.error('V86 not found after eval. typeof window.V86:', typeof window.V86);
+        }
+      } catch (e) {
+        console.error('V86 eval error:', e.message);
+        var errEl = document.getElementById('error-message');
+        if (errEl) errEl.textContent = 'V86 eval error: ' + e.message;
+        var errOv = document.getElementById('error-overlay');
+        if (errOv) errOv.classList.add('active');
+      }
+    } else {
+      console.error('V86 load failed: HTTP', xhr.status);
+      var errEl = document.getElementById('error-message');
+      if (errEl) errEl.textContent = 'V86 load failed: HTTP ' + xhr.status;
+      var errOv = document.getElementById('error-overlay');
+      if (errOv) errOv.classList.add('active');
+    }
+  };
+  xhr.onerror = function() {
+    console.error('V86 network error');
+    var errEl = document.getElementById('error-message');
+    if (errEl) errEl.textContent = 'V86 network error loading libv86.js';
+    var errOv = document.getElementById('error-overlay');
+    if (errOv) errOv.classList.add('active');
+  };
+  xhr.send();
+})();
 
-// Wait for V86 to be available
 function waitForV86(callback, retries) {
   retries = retries || 0;
-  if (typeof V86 !== 'undefined' || typeof window.V86 !== 'undefined') {
+  if (typeof window.V86 !== 'undefined' && window.V86) {
     callback();
-  } else if (retries < 50) {
+  } else if (retries < 100) {
     setTimeout(function() { waitForV86(callback, retries + 1); }, 100);
   } else {
-    document.getElementById('error-message').textContent = 'V86 engine not loaded. typeof V86 = ' + typeof V86 + '. Check if v86/libv86.js is accessible.';
-    document.getElementById('error-overlay').classList.add('active');
-    document.getElementById('boot-overlay').classList.remove('active');
+    var errEl = document.getElementById('error-message');
+    if (errEl) errEl.textContent = 'V86 failed to load after 10s. typeof window.V86=' + typeof window.V86;
+    var errOv = document.getElementById('error-overlay');
+    if (errOv) errOv.classList.add('active');
+    var bootOv = document.getElementById('boot-overlay');
+    if (bootOv) bootOv.classList.remove('active');
   }
 }
 </script>
@@ -453,7 +486,8 @@ function bootOS(icon, name, config) {
   waitForV86(function() {
     try {
       config.screen = document.getElementById('screen');
-      emulator = new V86(config);
+      var V86Class = window.V86;
+      emulator = new V86Class(config);
 
       emulator.add_listener('emulator-ready', function() {
         hideBootOverlay();
