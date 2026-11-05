@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head><title>V86 Test</title></head>
+<body>
+<div id="screen"></div>
+<script src="libv86.js"></script>
+<script>
+console.log('script loaded');
+console.log('typeof V86:', typeof V86);
+console.log('typeof window.V86:', typeof window.V86);
+if (typeof V86 !== 'undefined') {
+  document.body.innerHTML += '<p>V86 loaded! Type: ' + typeof V86 + '</p>';
+} else if (typeof window.V86 !== 'undefined') {
+  document.body.innerHTML += '<p>window.V86 loaded! Type: ' + typeof window.V86 + '</p>';
+} else {
+  document.body.innerHTML += '<p style="color:red">V86 NOT defined!</p>';
+  document.body.innerHTML += '<p>typeof require: ' + typeof require + '</p>';
+  document.body.innerHTML += '<p>typeof module: ' + typeof module + '</p>';
+  document.body.innerHTML += '<p>typeof exports: ' + typeof exports + '</p>';
+}
+</script>
+</body>
+</html>
