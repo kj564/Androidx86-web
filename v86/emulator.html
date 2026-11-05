@@ -273,7 +273,25 @@
 <input type="file" class="file-input" id="iso-upload" accept=".iso,.img,.bin" onchange="bootCustom(event)">
 
 <!-- v86 engine (hosted locally, no CORS) -->
-<script src="v86/libv86.js"></script>
+<script>
+// Force module to undefined so libv86.js falls back to window.V86
+window.__v86_ready = false;
+</script>
+<script src="v86/libv86.js" onerror="document.getElementById('error-message').textContent='Failed to load v86 engine (libv86.js). Check file path.';document.getElementById('error-overlay').classList.add('active');"></script>
+<script>
+// Wait for V86 to be available
+function waitForV86(callback, retries) {
+  retries = retries || 0;
+  if (typeof V86 !== 'undefined') {
+    callback();
+  } else if (retries < 50) {
+    setTimeout(function() { waitForV86(callback, retries + 1); }, 100);
+  } else {
+    document.getElementById('error-message').textContent = 'V86 engine failed to load. Ensure libv86.js is accessible.';
+    document.getElementById('error-overlay').classList.add('active');
+  }
+}
+</script>
 <script>
 let emulator = null;
 let deviceMode = 'tablet';
@@ -427,30 +445,32 @@ function bootOS(icon, name, config) {
   applyDeviceFrame();
   showBootOverlay(icon, name);
 
-  try {
-    config.screen = document.getElementById('screen');
-    emulator = new V86(config);
+  waitForV86(function() {
+    try {
+      config.screen = document.getElementById('screen');
+      emulator = new V86(config);
 
-    emulator.add_listener('emulator-ready', () => {
-      hideBootOverlay();
-      setStatus('running', 'RUNNING');
-    });
-
-    emulator.add_listener('emulator-started', () => {
-      hideBootOverlay();
-      setStatus('running', 'RUNNING');
-    });
-
-    setTimeout(() => {
-      if (document.getElementById('boot-overlay').classList.contains('active')) {
+      emulator.add_listener('emulator-ready', function() {
         hideBootOverlay();
         setStatus('running', 'RUNNING');
-      }
-    }, 15000);
+      });
 
-  } catch (e) {
-    showError(e.message);
-  }
+      emulator.add_listener('emulator-started', function() {
+        hideBootOverlay();
+        setStatus('running', 'RUNNING');
+      });
+
+      setTimeout(function() {
+        if (document.getElementById('boot-overlay').classList.contains('active')) {
+          hideBootOverlay();
+          setStatus('running', 'RUNNING');
+        }
+      }, 15000);
+
+    } catch (e) {
+      showError(e.message);
+    }
+  });
 }
 
 function restartEmulator() {
