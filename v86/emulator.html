@@ -173,9 +173,9 @@
           <div class="os-desc">DOS classic · Retro gaming · 1.4MB</div>
           <div class="os-spec">x86 · 32MB RAM · Floppy 737KB</div>
         </div>
-        <div class="os-card" onclick="bootTempleOS()" style="cursor:pointer;">
+        <div class="os-card" onclick="bootDOS()" style="cursor:pointer; opacity:0.5; pointer-events:none;">
           <div class="os-icon">⛪</div>
-          <div class="os-name" style="color:#A855F7;">TempleOS</div>
+          <div class="os-name" style="color:#A855F7;">TempleOS (needs 64-bit — not supported)</div>
           <div class="os-desc">Terry Davis · Holy Covenant · 16.5MB</div>
           <div class="os-spec">x86 · 256MB RAM · ISO 17MB</div>
         </div>
@@ -201,7 +201,7 @@
         </button>
       </div>
       <div class="launcher-info">
-        <p>Powered by v86 (x86 WASM JIT) · All files hosted locally · Boot FreeDOS, TempleOS, or your own ISO<br>
+        <p>Powered by v86 (x86 WASM JIT) · All files hosted locally · Boot FreeDOS, TempleOS (needs 64-bit — not supported), or your own ISO<br>
         Keyboard + mouse support · First boot loads WASM engine (~2MB, cached)</p>
       </div>
     </div>
@@ -374,8 +374,8 @@ function showLauncher() {
   setStatus('idle', 'IDLE');
 }
 
-function bootTempleOS() {
-  bootOS('⛪', 'TempleOS', {
+function bootTempleOS (needs 64-bit — not supported)() {
+  bootOS('⛪', 'TempleOS (needs 64-bit — not supported)', {
     wasm_path: 'v86.wasm',
     memory_size: 256 * 1024 * 1024,
     vga_memory_size: 8 * 1024 * 1024,
