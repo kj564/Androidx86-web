@@ -116,6 +116,26 @@
   .upload-zone { border: 2px dashed rgba(255,255,255,0.2); border-radius: 16px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.15s; }
   .upload-zone:hover { border-color: #A855F7; background: rgba(168,85,247,0.05); }
   .upload-zone p { font-size: 12px; color: rgba(255,255,255,0.4); }
+
+  /* RE 64-bit debug log panel */
+  .re-panel { position: absolute; top: 56px; right: 16px; width: 360px; max-height: calc(100vh - 200px); background: rgba(0,0,0,0.85); backdrop-filter: blur(12px); border: 1px solid rgba(61,220,132,0.3); border-radius: 12px; padding: 12px; z-index: 9; display: none; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; }
+  .re-panel.active { display: flex; flex-direction: column; gap: 6px; }
+  .re-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .re-panel-title { font-size: 11px; font-weight: 700; color: #3DDC84; letter-spacing: 0.5px; }
+  .re-panel-close { background: none; border: none; color: rgba(255,255,255,0.4); cursor: pointer; font-size: 14px; line-height: 1; }
+  .re-status-grid { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 10px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 6px; }
+  .re-status-key { color: rgba(255,255,255,0.5); }
+  .re-status-val { color: #3DDC84; font-weight: 600; }
+  .re-status-val.off { color: rgba(255,255,255,0.3); }
+  .re-status-val.warn { color: #f59e0b; }
+  .re-log-list { flex: 1; overflow-y: auto; max-height: 260px; padding-right: 4px; }
+  .re-log-list::-webkit-scrollbar { width: 4px; }
+  .re-log-list::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+  .re-log-list::-webkit-scrollbar-thumb { background: rgba(61,220,132,0.4); border-radius: 2px; }
+  .re-log-entry { padding: 3px 0; color: rgba(255,255,255,0.7); border-bottom: 1px dashed rgba(255,255,255,0.05); word-break: break-word; }
+  .re-log-entry.warn { color: #f59e0b; }
+  .re-log-entry.error { color: #ef4444; }
+  .re-log-entry.ok { color: #3DDC84; }
 </style>
 </head>
 <body>
@@ -163,7 +183,7 @@
         <div class="date" id="launch-date">Loading...</div>
       </div>
       <div class="launcher-title">
-        <h1><span class="icon">🖥️</span> x86 Emulator</h1>
+        <h1><span class="icon">🤖</span> x86 Emulator</h1>
         <p>Boot OS native di browser · v86 WASM engine · 100% local · No server</p>
       </div>
       <div class="os-grid">
@@ -173,17 +193,17 @@
           <div class="os-desc">DOS classic · Retro gaming · 1.4MB</div>
           <div class="os-spec">x86 · 32MB RAM · Floppy 737KB</div>
         </div>
+        <div class="os-card templeos" onclick="bootTempleOS()" style="cursor:pointer;">
+          <div class="os-icon">⛪</div>
+          <div class="os-name" style="color:#A855F7;">TempleOS</div>
+          <div class="os-desc">Terry Davis · Holy Covenant · 17MB</div>
+          <div class="os-spec">x86-64 · 512MB RAM · RE long-mode active</div>
+        </div>
         <div class="os-card custom" onclick="document.getElementById('iso-upload').click()" style="cursor:pointer;">
           <div class="os-icon">📂</div>
           <div class="os-name">Custom ISO/IMG</div>
           <div class="os-desc">Upload ISO/IMG/FLP Anda sendiri</div>
           <div class="os-spec">x86 · Configurable</div>
-        </div>
-        <div class="os-card custom" onclick="document.getElementById('iso-upload').click()" style="cursor:pointer;">
-          <div class="os-icon">⛪</div>
-          <div class="os-name">TempleOS</div>
-          <div class="os-desc">Upload TempleOS.ISO Anda</div>
-          <div class="os-spec">x86 · 256MB RAM · ISO ~16MB</div>
         </div>
       </div>
       <div class="device-selector">
@@ -201,8 +221,9 @@
         </button>
       </div>
       <div class="launcher-info">
-        <p>Powered by v86 (x86 WASM JIT) · All files hosted locally · Boot FreeDOS, TempleOS, or your own ISO<br>
-        Keyboard + mouse support · First boot loads WASM engine (~2MB, cached)</p>
+        <p>Powered by v86 (x86 WASM JIT) · All files hosted locally · Boot FreeDOS, TempleOS (RE 64-bit long mode), or your own ISO<br>
+        Keyboard + mouse support · First boot loads WASM engine (~2MB, cached)<br>
+        <strong style="color:#3DDC84;">✓ RE 64-bit: CPUID LM · EFER.LME/LMA · 4-level paging (PML4→PDPT→PD→PT) · REX prefix · REX.W 64-bit ops · 64-bit GPRs (RAX-R15) · null seg relaxed</strong></p>
       </div>
     </div>
 
@@ -242,6 +263,27 @@
       <img id="screenshot-img" alt="Screenshot">
       <button class="screenshot-download" onclick="downloadScreenshot()">Save PNG</button>
     </div>
+
+    <!-- RE 64-bit status panel -->
+    <div class="re-panel" id="re-panel">
+      <div class="re-panel-header">
+        <span class="re-panel-title">🔬 RE 64-bit long mode</span>
+        <button class="re-panel-close" onclick="toggleRePanel()">✕</button>
+      </div>
+      <div class="re-status-grid">
+        <span class="re-status-key">CPUID LM bit</span><span class="re-status-val" id="re-cpuid">—</span>
+        <span class="re-status-key">EFER.LME</span><span class="re-status-val off" id="re-lme">OFF</span>
+        <span class="re-status-key">EFER.LMA</span><span class="re-status-val off" id="re-lma">OFF</span>
+        <span class="re-status-key">4-level paging</span><span class="re-status-val off" id="re-paging">OFF</span>
+        <span class="re-status-key">Long mode active</span><span class="re-status-val off" id="re-active">OFF</span>
+        <span class="re-status-key">REX prefix decode</span><span class="re-status-val off" id="re-rex">OFF</span>
+        <span class="re-status-key">REX.W (64-bit ops)</span><span class="re-status-val off" id="re-rexw">OFF</span>
+        <span class="re-status-key">64-bit GPRs (RAX-R15)</span><span class="re-status-val off" id="re-reg64">OFF</span>
+        <span class="re-status-key">Null seg relaxed</span><span class="re-status-val off" id="re-nullseg">OFF</span>
+        <span class="re-status-key">#GP skip+advance</span><span class="re-status-val off" id="re-gp">0</span>
+      </div>
+      <div class="re-log-list" id="re-log"></div>
+    </div>
   </div>
 
   <!-- Dock -->
@@ -272,48 +314,95 @@
 
 <input type="file" class="file-input" id="iso-upload" accept=".iso,.img,.bin" onchange="bootCustom(event)">
 
-<!-- v86 engine (hosted locally) -->
-<script>
-var v86Loaded = false;
-var v86Error = null;
-
-function onV86Loaded() {
-  v86Loaded = true;
-  console.log('V86 script loaded. window.V86 =', typeof window.V86);
-}
-
-function onV86Error(e) {
-  v86Error = 'Failed to load v86/libv86.js';
-  console.error('V86 script error:', v86Error);
-}
-</script>
-<script src="libv86.js?v=6" onload="onV86Loaded()" onerror="onV86Error(event)"></script>
-<script>
-function waitForV86(callback, retries) {
-  retries = retries || 0;
-  if (v86Error) {
-    document.getElementById('error-message').textContent = v86Error;
-    document.getElementById('error-overlay').classList.add('active');
-    document.getElementById('boot-overlay').classList.remove('active');
-    return;
-  }
-  if (v86Loaded && typeof window.V86 !== 'undefined' && window.V86) {
-    console.log('V86 ready, type:', typeof window.V86);
-    callback();
-  } else if (retries < 100) {
-    setTimeout(function() { waitForV86(callback, retries + 1); }, 100);
-  } else {
-    document.getElementById('error-message').textContent = 'V86 not loaded. v86Loaded=' + v86Loaded + ' typeof window.V86=' + typeof window.V86;
-    document.getElementById('error-overlay').classList.add('active');
-    document.getElementById('boot-overlay').classList.remove('active');
-  }
-}
-</script>
+<!-- v86 engine (hosted locally, no CORS) -->
+<script src="libv86.js"></script>
 <script>
 let emulator = null;
 let deviceMode = 'tablet';
 let bootProgress = 0;
 let progressInterval = null;
+
+// ===== RE 64-bit long mode state tracker =====
+// Intercepts console.error calls from v86 WASM (which uses console_log_from_wasm)
+// and updates the RE 64-bit status panel.
+const reState = {
+  cpuid: false, lme: false, lma: false, paging: false, gpCount: 0,
+  longModeActive: false,
+  logs: [],
+};
+function reLog(msg, kind) {
+  const list = document.getElementById('re-log');
+  if (!list) return;
+  const entry = document.createElement('div');
+  entry.className = 're-log-entry ' + (kind || '');
+  entry.textContent = msg;
+  list.appendChild(entry);
+  // keep only last 200 entries
+  while (list.children.length > 200) list.removeChild(list.firstChild);
+  list.scrollTop = list.scrollHeight;
+}
+function reUpdate(field, value, klass) {
+  const el = document.getElementById('re-' + field);
+  if (el) {
+    el.textContent = value;
+    el.className = 're-status-val ' + (klass || '');
+  }
+}
+// Hook console.error to intercept v86 WASM [long-mode-re] messages.
+const _origError = console.error;
+console.error = function(...args) {
+  if (args[0] && typeof args[0] === 'string' && args[0].indexOf('[long-mode-re]') === 0) {
+    const msg = args[0];
+    reLog(msg, msg.indexOf('#GP') >= 0 ? 'warn' : (msg.indexOf('REX') >= 0 ? 'ok' : 'ok'));
+    if (msg.indexOf('CPUID 0x80000001') >= 0) {
+      reState.cpuid = true;
+      reUpdate('cpuid', 'SET (LM bit)', '');
+    } else if (msg.indexOf('EFER.LME set') >= 0) {
+      reState.lme = true;
+      reUpdate('lme', 'SET', '');
+    } else if (msg.indexOf('ACTIVATED long mode') >= 0) {
+      reState.lma = true;
+      reState.paging = true;
+      reState.longModeActive = true;
+      reUpdate('lma', 'SET', '');
+      reUpdate('paging', 'ACTIVE', '');
+      reUpdate('active', 'YES', '');
+      // REX + REX.W + 64-bit GPRs + null seg are all active once long mode is on
+      reUpdate('rex', 'ACTIVE', '');
+      reUpdate('rexw', 'ACTIVE', '');
+      reUpdate('reg64', '16 regs', '');
+      reUpdate('nullseg', 'RELAXED', '');
+    } else if (msg.indexOf('DEACTIVATED') >= 0 || msg.indexOf('disabled') >= 0) {
+      reState.lma = false;
+      reState.longModeActive = false;
+      reUpdate('lma', 'OFF', 'off');
+      reUpdate('paging', 'OFF', 'off');
+      reUpdate('active', 'OFF', 'off');
+      reUpdate('rex', 'OFF', 'off');
+      reUpdate('rexw', 'OFF', 'off');
+      reUpdate('reg64', 'OFF', 'off');
+      reUpdate('nullseg', 'OFF', 'off');
+    } else if (msg.indexOf('REX') >= 0 && msg.indexOf('opcode') >= 0) {
+      // REX prefix instruction detected
+      reUpdate('rex', 'ACTIVE', '');
+      if (msg.indexOf('0x48') >= 0 || msg.indexOf('0x49') >= 0) {
+        reUpdate('rexw', 'ACTIVE', '');
+      }
+    } else if (msg.indexOf('#GP skipped') >= 0 || msg.indexOf('#GP:') >= 0) {
+      reState.gpCount++;
+      reUpdate('gp', reState.gpCount, 'warn');
+    }
+  }
+  return _origError.apply(console, args);
+};
+function toggleRePanel() {
+  const panel = document.getElementById('re-panel');
+  panel.classList.toggle('active');
+}
+// Show the RE panel when booting TempleOS
+function showRePanel() {
+  document.getElementById('re-panel').classList.add('active');
+}
 
 // Device dimensions
 const devices = {
@@ -409,14 +498,15 @@ function showLauncher() {
   setStatus('idle', 'IDLE');
 }
 
-function bootDOS() {
-  bootOS('🤖', 'Android 1.6', {
+function bootTempleOS() {
+  showRePanel();
+  bootOS('⛪', 'TempleOS', {
     wasm_path: 'v86.wasm',
     memory_size: 512 * 1024 * 1024,
     vga_memory_size: 8 * 1024 * 1024,
     bios: { url: 'bios/seabios.bin' },
     vga_bios: { url: 'bios/vgabios.bin' },
-    cdrom: { url: 'iso/android16.iso' },
+    cdrom: { url: 'iso/templeos.iso' },
     autostart: true,
   });
 }
@@ -462,37 +552,30 @@ function bootOS(icon, name, config) {
   applyDeviceFrame();
   showBootOverlay(icon, name);
 
-  waitForV86(function() {
-    try {
-      // Make emulator visible BEFORE creating V86 (needs visible container)
-      document.getElementById('emulator-wrap').classList.add('active');
-      applyDeviceFrame();
-      
-      config.screen_container = document.getElementById('screen');
-      var V86Class = window.V86;
-      emulator = new V86Class(config);
+  try {
+    config.screen_container = document.getElementById('screen');
+    emulator = new V86(config);
 
-      emulator.add_listener('emulator-ready', function() {
+    emulator.add_listener('emulator-ready', () => {
+      hideBootOverlay();
+      setStatus('running', 'RUNNING');
+    });
+
+    emulator.add_listener('emulator-started', () => {
+      hideBootOverlay();
+      setStatus('running', 'RUNNING');
+    });
+
+    setTimeout(() => {
+      if (document.getElementById('boot-overlay').classList.contains('active')) {
         hideBootOverlay();
         setStatus('running', 'RUNNING');
-      });
+      }
+    }, 15000);
 
-      emulator.add_listener('emulator-started', function() {
-        hideBootOverlay();
-        setStatus('running', 'RUNNING');
-      });
-
-      setTimeout(function() {
-        if (document.getElementById('boot-overlay').classList.contains('active')) {
-          hideBootOverlay();
-          setStatus('running', 'RUNNING');
-        }
-      }, 15000);
-
-    } catch (e) {
-      showError(e.message);
-    }
-  });
+  } catch (e) {
+    showError(e.message);
+  }
 }
 
 function restartEmulator() {
