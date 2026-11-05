@@ -287,7 +287,7 @@ function onV86Error(e) {
   console.error('V86 script error:', v86Error);
 }
 </script>
-<script src="v86/libv86.js?v=5" onload="onV86Loaded()" onerror="onV86Error(event)"></script>
+<script src="libv86.js?v=6" onload="onV86Loaded()" onerror="onV86Error(event)"></script>
 <script>
 function waitForV86(callback, retries) {
   retries = retries || 0;
@@ -411,24 +411,24 @@ function showLauncher() {
 
 function bootAndroid() {
   bootOS('🤖', 'Android 1.6', {
-    wasm_path: 'v86/v86.wasm',
+    wasm_path: 'v86.wasm',
     memory_size: 512 * 1024 * 1024,
     vga_memory_size: 8 * 1024 * 1024,
-    bios: { url: 'v86/bios/seabios.bin' },
-    vga_bios: { url: 'v86/bios/vgabios.bin' },
-    cdrom: { url: 'v86/iso/android16.iso' },
+    bios: { url: 'bios/seabios.bin' },
+    vga_bios: { url: 'bios/vgabios.bin' },
+    cdrom: { url: 'iso/android16.iso' },
     autostart: true,
   });
 }
 
 function bootDOS() {
   bootOS('💾', 'FreeDOS', {
-    wasm_path: 'v86/v86.wasm',
+    wasm_path: 'v86.wasm',
     memory_size: 32 * 1024 * 1024,
     vga_memory_size: 4 * 1024 * 1024,
-    bios: { url: 'v86/bios/seabios.bin' },
-    vga_bios: { url: 'v86/bios/vgabios.bin' },
-    fda: { url: 'v86/iso/freedos.img' },
+    bios: { url: 'bios/seabios.bin' },
+    vga_bios: { url: 'bios/vgabios.bin' },
+    fda: { url: 'iso/freedos.img' },
     autostart: true,
   });
 }
@@ -439,11 +439,11 @@ function bootCustom(event) {
   const url = URL.createObjectURL(file);
   const isCD = file.name.endsWith('.iso');
   const config = {
-    wasm_path: 'v86/v86.wasm',
+    wasm_path: 'v86.wasm',
     memory_size: 256 * 1024 * 1024,
     vga_memory_size: 8 * 1024 * 1024,
-    bios: { url: 'v86/bios/seabios.bin' },
-    vga_bios: { url: 'v86/bios/vgabios.bin' },
+    bios: { url: 'bios/seabios.bin' },
+    vga_bios: { url: 'bios/vgabios.bin' },
     autostart: true,
   };
   if (isCD) config.cdrom = { url };
