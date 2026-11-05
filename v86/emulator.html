@@ -274,21 +274,26 @@
 
 <!-- v86 engine (hosted locally, no CORS) -->
 <script>
-// Force module to undefined so libv86.js falls back to window.V86
-window.__v86_ready = false;
+// Explicitly set module to undefined to force libv86.js to use window.V86
+var module = undefined;
 </script>
-<script src="v86/libv86.js" onerror="document.getElementById('error-message').textContent='Failed to load v86 engine (libv86.js). Check file path.';document.getElementById('error-overlay').classList.add('active');"></script>
+<script src="v86/libv86.js?v=2" onerror="document.getElementById('error-message').textContent='Failed to load v86/libv86.js. Check network tab.';document.getElementById('error-overlay').classList.add('active');"></script>
 <script>
+// Debug: check if V86 loaded
+console.log('V86 type:', typeof V86);
+console.log('window.V86 type:', typeof window.V86);
+
 // Wait for V86 to be available
 function waitForV86(callback, retries) {
   retries = retries || 0;
-  if (typeof V86 !== 'undefined') {
+  if (typeof V86 !== 'undefined' || typeof window.V86 !== 'undefined') {
     callback();
   } else if (retries < 50) {
     setTimeout(function() { waitForV86(callback, retries + 1); }, 100);
   } else {
-    document.getElementById('error-message').textContent = 'V86 engine failed to load. Ensure libv86.js is accessible.';
+    document.getElementById('error-message').textContent = 'V86 engine not loaded. typeof V86 = ' + typeof V86 + '. Check if v86/libv86.js is accessible.';
     document.getElementById('error-overlay').classList.add('active');
+    document.getElementById('boot-overlay').classList.remove('active');
   }
 }
 </script>
